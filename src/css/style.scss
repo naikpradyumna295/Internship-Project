@@ -1,0 +1,721 @@
+%content-base {
+	$color: hsl(30, 20%, 15%);
+	$dark-color: hsl(30, 20%, 10%);
+
+	position: relative;
+	display: block;
+	width: 100%;
+	height: 100%;
+	color: white;
+	text-align: center;
+	overflow-y: auto;
+
+	background:
+		linear-gradient(135deg, $color 25%, transparent 25%),
+		linear-gradient(225deg, $color 25%, transparent 25%),
+		linear-gradient(315deg, $color 25%, transparent 25%),
+		linear-gradient(45deg, $color 25%, transparent 25%);
+	background-size: 5em 5em;
+	background-color: $dark-color;
+}
+
+$book-card-bg-color: hsl(30, 100%, 90%);
+$book-card-bg-color--hover: hsl(30, 100%, 80%);
+$dialog-value-color: hsl(30, 60%, 80%);
+
+@mixin dialog-box() {
+	display: flex;
+	flex-direction: column;
+	margin: .1em;
+	padding: 2em 1em;
+	border-radius: .2em;
+	box-sizing: border-box;
+	background-color: $book-card-bg-color;
+	filter: drop-shadow(0 0 8px hsl(34deg 30% 16%));
+	color: black;
+	transition: all .25s;
+}
+
+$dialog-button-bg-color: hsl(30, 30%, 40%);
+$dialog-button-bg-color--hover: hsl(30, 30%, 30%);
+
+@mixin dialog-button($height: 1.5em, $font-size: 1.25em) {
+	margin: .25em;
+	width: 100%;
+	line-height: $height;
+	background-color: $dialog-button-bg-color;
+	border-radius: .2em;
+	box-sizing: border-box;
+	color: white;
+	font-size: $font-size;
+	text-align: center;
+	cursor: pointer;
+
+	&:hover {
+		background-color: $dialog-button-bg-color--hover;
+	}
+}
+
+@mixin dialog-icon($height: 1.5em, $font-size: 1.25em) {
+	@include dialog-button($height, $font-size);
+	width: 8em;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: 50% 50%;
+	-webkit-text-stroke: 1px #000;
+}
+
+@mixin book-image($width: calc(100% / 3), $position: 0 0) {
+	>.book-image {
+		width: $width;
+
+		>img {
+			width: 100%;
+			height: 100%;
+			object-fit: contain;
+			object-position: $position;
+		}
+	}
+}
+
+@mixin book-data-table() {
+	>table {
+		border-collapse: separate;
+		border-spacing: 1;
+		width: 100%;
+
+		.key {
+			width: 5.5em;
+			text-align: right;
+			font-size: .6em;
+			font-weight: bold;
+		}
+
+		.value {
+			width: 16em;
+			padding-left: .2em;
+			border-radius: .2em;
+			background-color: $dialog-value-color;
+			font-size: .8em;
+		}
+	}
+}
+
+html {
+	margin: 0;
+	padding: 0;
+	font-family: serif;
+	font-size: 4vw;
+	-webkit-tap-highlight-color: transparent;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+}
+
+input {
+	font-family: serif;
+}
+
+select {
+	font-family: serif;
+	cursor: pointer;
+}
+
+#root {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+}
+
+#contents {
+	@extend %content-base;
+}
+
+@media screen and (min-width: 640px) {
+	html {
+		font-size: 16px;
+	}
+}
+
+/******************************************************************************
+
+******************************************************************************/
+
+@mixin configuration-menu {
+	@include dialog-box();
+
+	&-base {
+		@extend %content-base;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	input {
+		margin: .25em auto;
+		width: 20em;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.title {
+		font-size: 1.25em;
+	}
+
+	.notice {
+		font-size: .8em;
+	}
+
+	.button-group {
+		display: flex;
+		flex-direction: column;
+		margin: 1em auto .25em;
+		width: 50%;
+
+		.button {
+			@include dialog-button(1.5em, 1em);
+		}
+	}
+}
+
+.login {
+	@include configuration-menu();
+
+	.version {
+		font-size: .8em;
+	}
+
+	.button-option-group {
+		display: flex;
+		flex-direction: column;
+		margin: 1em auto 0;
+		width: 100%;
+
+		.button {
+			@include dialog-button(1.2em, .8em);
+			margin: .25em;
+			background-color: transparent;
+			color: black;
+
+			&:hover {
+				background-color: transparent;
+				text-decoration: underline;
+			}
+		}
+	}
+}
+
+.change-userdata {
+	@include configuration-menu();
+}
+
+/******************************************************************************
+
+******************************************************************************/
+$button-bg-color: hsl(30, 30%, 25%);
+$button-bg-color--hover: hsl(30, 30%, 50%);
+
+.header {
+	position: relative;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	width: 100%;
+	box-sizing: border-box;
+	background-color: hsl(35deg 30% 30%);
+	filter: drop-shadow(0 0 16px hsl(35deg 30% 15%));
+	z-index: 1000;
+
+	img {
+		box-sizing: border-box;
+		width: 2.5em;
+
+		border: 1px solid red;
+	}
+
+	.icon {
+		margin: .2em;
+		width: 4em;
+		height: 2.5em;
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: 50% 50%;
+		background-color: $button-bg-color;
+		border-radius: .2em;
+		cursor: pointer;
+
+		&:hover {
+			background-color: $button-bg-color--hover;
+		}
+	}
+}
+
+.mode {
+	display: inline-flex;
+	width: 100%;
+
+	>.button {
+		display: none;
+		margin: .2em 0 .2em .2em;
+		padding: 0 1em;
+		min-width: 5em;
+		line-height: 2em;
+		box-sizing: border-box;
+		background-color: $button-bg-color;
+		border-radius: .2em;
+		text-align: center;
+		font-size: 1.25em;
+		color: white;
+		cursor: pointer;
+
+		&:hover {
+			background-color: $button-bg-color--hover;
+		}
+
+		&-enable {
+			background: linear-gradient(0deg, hsl(30, 30%, 15%), hsl(30, 30%, 20%));
+		}
+	}
+
+	>.control {
+		display: inline-block;
+		margin: .2em 0;
+		width: 100%;
+		line-height: 2em;
+		background-color: $button-bg-color;
+		border: 1px solid hsl(30, 30%, 20%);
+		border-radius: .2em;
+		color: white;
+		font-size: 1.25em;
+	}
+}
+
+@media screen and (min-width: 680px) {
+	.mode {
+		>.button {
+			display: inline-block;
+		}
+
+		>.control {
+			display: none;
+		}
+	}
+}
+
+.menu-button {
+	background-image: url("icons/menu.svg");
+}
+
+.search-button {
+	background-image: url("icons/search.svg");
+}
+
+.add-button {
+	background-image: url("icons/add.svg");
+}
+
+.description-button {
+	background-image: url("icons/description.svg");
+}
+
+.delete-button {
+	background-image: url("icons/delete.svg");
+}
+
+/******************************************************************************
+
+******************************************************************************/
+
+.notify-board {
+	position: absolute;
+	display: flex;
+	align-items: center;
+	justify-items: center;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+
+	&-message {
+		margin: 0 auto;
+		color: white;
+		text-align: center;
+	}
+}
+
+/******************************************************************************
+
+******************************************************************************/
+
+.book-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: .1em;
+
+	&-thumb {
+		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+		justify-items: center;
+	}
+}
+
+/******************************************************************************
+
+******************************************************************************/
+
+.book-card {
+	display: flex;
+	margin: 0 auto;
+	padding: .25em;
+	width: 640px;
+	max-width: 100%;
+	box-sizing: border-box;
+	background-color: $book-card-bg-color;
+	border-radius: .2em;
+	color: black;
+	text-align: left;
+	cursor: pointer;
+
+	&:hover {
+		background-color: $book-card-bg-color--hover;
+	}
+
+	&--detail {
+		flex-direction: row;
+
+		@include book-image();
+		@include book-data-table();
+	}
+
+	&--simple {
+		flex-direction: column;
+
+		>.date {
+			margin: 0;
+			padding: .25em 1em;
+			box-sizing: border-box;
+			width: 100%;
+		}
+
+		>.title {
+			margin: 0;
+			padding: .25em 1em .25em 2em;
+			box-sizing: border-box;
+			width: 100%;
+			font-weight: bold;
+		}
+	}
+
+	&--thumb {
+		width: auto;
+		background-color: transparent;
+		@include book-image(auto, center center);
+	}
+}
+
+/******************************************************************************
+
+******************************************************************************/
+
+.modal {
+	visibility: hidden;
+	position: absolute;
+	display: block;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	background-color: hsla(0, 50%, 0%, .65);
+	opacity: 0;
+	transition: all .2s;
+	z-index: 1001;
+
+	&-open {
+		visibility: visible;
+		opacity: 1;
+	}
+
+	&-base {
+		visibility: visible;
+		display: flex;
+		align-items: center;
+		justify-items: center;
+		opacity: 1;
+	}
+
+	&-message {
+		margin: 0 auto;
+		color: white;
+		text-align: center;
+	}
+}
+
+.confirm {
+	visibility: hidden;
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-items: center;
+	justify-content: center;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	background-color: hsla(0, 50%, 0%, .8);
+	opacity: 0;
+	transition: all .2s;
+	z-index: 1004;
+
+	&-open {
+		visibility: visible;
+		opacity: 1;
+	}
+
+	@mixin message-base($align: center) {
+		margin: 0 auto;
+		width: 640px;
+		max-width: 100%;
+		color: white;
+		text-align: $align;
+	}
+
+	&-message {
+		@include message-base();
+	}
+
+	&-description {
+		@include message-base(left);
+	}
+
+	.button-group {
+		display: flex;
+		flex-direction: row;
+		margin: 0 auto;
+
+		.button {
+			margin: 1em;
+			padding: .5em 1em;
+			background-color: $dialog-button-bg-color;
+			border-radius: .4em;
+			color: white;
+			cursor: pointer;
+
+			&:hover {
+				background-color: $dialog-button-bg-color--hover;
+			}
+		}
+	}
+}
+
+/******************************************************************************
+
+******************************************************************************/
+
+.menu-box,
+.search-box {
+	visibility: hidden;
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	padding: 2em 1em;
+	top: 3em;
+	left: 0;
+	right: 0;
+	height: 0;
+	border-radius: 4px;
+	background-color: hsla(30, 30%, 50%, .9);
+	box-sizing: border-box;
+	opacity: 0;
+	transition: all .25s;
+	z-index: 1003;
+
+	>.headline {
+		margin: .25em 1em;
+		border-bottom: 1px solid white;
+		color: white;
+		text-align: center;
+	}
+
+	&-open {
+		visibility: visible;
+		bottom: 0;
+		height: fit-content;
+		max-height: calc(100% - 7em);
+		overflow: hidden auto;
+		opacity: 1;
+	}
+
+	.control {
+		margin: .5em 0;
+		line-height: 1.5em;
+		background-color: hsl(30, 30%, 30%);
+		border: 1px solid hsl(30, 30%, 20%);
+		border-radius: 4px;
+		color: white;
+		font-size: 1.25em;
+	}
+
+	.button {
+		margin: .25em auto;
+		width: 100%;
+		line-height: 2.5em;
+		background-color: hsl(30, 30%, 40%);
+		border-radius: .2em;
+		color: white;
+		font-size: 1.25em;
+		text-align: center;
+		cursor: pointer;
+
+		&:hover {
+			background-color: hsl(30, 30%, 30%);
+		}
+	}
+}
+
+@media screen and (min-width: 480px) {
+
+	.menu-box,
+	.search-box {
+		width: 480px;
+	}
+
+	.menu-box {
+		right: auto;
+	}
+
+	.search-box {
+		left: auto;
+	}
+}
+
+/******************************************************************************
+
+******************************************************************************/
+
+.book-data {
+	@include dialog-box();
+	visibility: hidden;
+	width: 640px;
+	max-width: 100%;
+	opacity: 0;
+	transform: scale(.8);
+
+	&-base {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	&-open {
+		visibility: visible;
+		height: fit-content;
+		max-height: calc(100% - .2em);
+		overflow: hidden auto;
+		opacity: 1;
+		transform: scale(1);
+	}
+
+	.book-basic-data {
+		display: flex;
+		margin-bottom: 1em;
+		text-align: left;
+
+		@include book-image();
+		@include book-data-table();
+	}
+
+	.book-user-data {
+		font-size: .8em;
+		border-collapse: collapse;
+		border-spacing: 0;
+
+		.key {
+			width: 5.5em;
+			text-align: right;
+			font-size: .6em;
+			font-weight: bold;
+		}
+
+		.value {
+			width: 16em;
+			padding-left: .2em;
+		}
+	}
+
+	%group-shared {
+		display: flex;
+		margin: .25em auto;
+		width: 100%;
+		justify-content: space-around;
+	}
+
+	.row-group {
+		@extend %group-shared;
+
+		.item {
+			margin: 0 .5em;
+			width: 100%;
+			text-align: center;
+
+			>header {
+				border-bottom: 1px solid black;
+				color: black;
+				text-align: center;
+				font-size: .6em;
+				font-weight: bold;
+			}
+
+			>*:not(:first-child) {
+				width: 100%;
+				font-size: .8em;
+			}
+
+			%input-shared {
+				height: 2em;
+				border: 0;
+				border-radius: .2em;
+				box-sizing: border-box;
+				background-color: $dialog-button-bg-color;
+				color: white;
+			}
+
+			>select,
+			>input {
+				@extend %input-shared;
+			}
+
+			>textarea {
+				@extend %input-shared;
+				margin-top: .1em;
+				height: 3em;
+				resize: none;
+			}
+		}
+	}
+
+	.button-group {
+		@extend %group-shared;
+		margin-top: 1em;
+
+		.button {
+			@include dialog-button(2.5em);
+		}
+
+		.icon {
+			@include dialog-icon(2.5em);
+		}
+
+		.spacer {
+			width: 100%;
+		}
+	}
+}

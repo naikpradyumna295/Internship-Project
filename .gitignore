@@ -1,0 +1,5 @@
+.vscode/
+dist/bundle.*
+dist/style.css
+node_modules/
+secret*
