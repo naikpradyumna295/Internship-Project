@@ -11,8 +11,8 @@ end
 directory AppDir
 environment 'production'
 
-# port 9302 # Listening 0.0.0.0
-bind 'tcp://localhost:9302'
+# port 9292 # Listening 0.0.0.0
+bind 'tcp://localhost:9292'
 # bind "unix:///#{AppDir}/tmp/puma.sock" # Listening UNIX domain socket
 silence_single_worker_warning
 preload_app!

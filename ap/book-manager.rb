@@ -22,14 +22,14 @@ use Rack::Protection::FormToken
 use Rack::Protection::ReferrerPolicy
 use Rack::Protection::RemoteReferrer
 use Rack::Protection::StrictTransport
-use Rack::Protection, permitted_origins: ["https://app.mrz-net.org"]
+use Rack::Protection, permitted_origins: ["https://book-manager.mrz-net.org"]
 
 logger = Logger.new 'log/sinatra.log'
 
 before do
 	logger.debug "#{env['HTTP_X_FORWARDED_FOR']} #{env['REQUEST_METHOD']} #{env['REQUEST_URI']} #{session.inspect}"
 
-	request.script_name = '/book-manager/api'
+	request.script_name = '/api'
 end
 
 helpers do

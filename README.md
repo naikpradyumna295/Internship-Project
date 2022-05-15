@@ -27,4 +27,4 @@ ISBNを元に蔵書の管理を行うWEBアプリです。
 ### WEBサーバの準備
 
 1. Document rootとして`dist`ディレクトリを指定します。
-2. Reverse proxy設定等で、`/api`以下へのアクセスを上記APサーバ(`http://localhost:9302`)へ転送するように設定します。
+2. Reverse proxy設定等で、`/api`以下へのアクセスを上記APサーバ(`http://localhost:9292`)へ転送するように設定します。
