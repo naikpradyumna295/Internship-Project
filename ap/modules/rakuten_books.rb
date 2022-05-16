@@ -14,7 +14,12 @@ module RaktenBooksAPI
 			@@DefaultQueryParams[:affiliateId] = affiliate_id unless affiliate_id.nil?
 		end
 
+		def setup?; @@DefaultQueryParams.has_key? :applicationId; end
+		def affiliateId=(id); @@DefaultQueryParams[:affiliateId] = id unless id.nil?; end
+
 		def get(param)
+			raise 'Need application id.' unless setup?
+
 			params = @@DefaultQueryParams.clone.merge(param)
 			query = params.map{|k,v| "#{k}=#{URI.encode_www_form_component(v)}" }.join('&')
 

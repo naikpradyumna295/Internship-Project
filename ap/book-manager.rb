@@ -11,7 +11,10 @@ require_relative 'modules/rakuten_books'
 require_relative 'secret'
 
 SelfDB.setup DB_NAME
-RaktenBooksAPI.setup RAKUTEN_APP_ID, affiliate_id: RAKUTEN_AFFILIATE_ID
+if Object.const_defined? :RAKUTEN_APP_ID
+	RaktenBooksAPI.setup RAKUTEN_APP_ID
+	RaktenBooksAPI.affiliateId = RAKUTEN_AFFILIATE_ID if Object.const_defined? :RAKUTEN_AFFILIATE_ID
+end
 
 use Rack::Session::Cookie, secret: RACK_SESSION_SECRET, max_age: 3600*24*7
 use Rack::Protection::AuthenticityToken
@@ -203,7 +206,7 @@ get '/search' do
 	books = SelfDB.to_json(table)
 	books = OpenBD.get(params[:isbn]) if books.empty? && params.has_key?(:isbn)
 
-	if books.empty? && params.has_key?(:isbn) || params.has_key?(:title) || params.has_key?(:author) || params.has_key?(:tag)
+	if RaktenBooksAPI.setup? && books.empty? && params.has_key?(:isbn) || params.has_key?(:title) || params.has_key?(:author) || params.has_key?(:tag)
 		RaktenBooksAPI.get(params).each do |book|
 			books.append(book) if books.find{|v| v[:isbn] == book[:isbn]}.nil?
 		end

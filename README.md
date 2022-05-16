@@ -9,13 +9,13 @@ ISBNを元に蔵書の管理を行うWEBアプリです。
 
 1. `ap`ディレクトリに`secret.rb`を作成して、以下の定数を定義します。
 
-|定数|型|内容|
-|----|--|----|
-|CACHE_DIR|string|書影画像([ISBN].jpg)を保存するディレクトリへの絶対パス|
-|RACK_SESSION_SECRET|string|Rackのession secret|
-|DB_NAME|string|database名|
-|RAKUTEN_APP_ID|integer|楽天APIのApplication ID|
-|RAKUTEN_AFFILIATE_ID|string|楽天APIのAffiliate ID|
+|定数|型|内容|要・不要|
+|----|--|----|:-:|
+|CACHE_DIR|string|書影画像([ISBN].jpg)を保存するディレクトリへの絶対パス|必須|
+|RACK_SESSION_SECRET|string|Rackのession secret|必須|
+|DB_NAME|string|database名|必須|
+|RAKUTEN_APP_ID|integer|楽天APIのApplication ID|オプション|
+|RAKUTEN_AFFILIATE_ID|string|楽天APIのAffiliate ID|オプション|
 
 2. `ap`ディレクトリで以下のコマンドを実行します。
 
