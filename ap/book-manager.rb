@@ -180,9 +180,7 @@ end
 # search
 #
 
-get '/search' do
-	table = SelfDB::User.books(session.id)
-
+def search(table, params)
 	if params.has_key?(:isbn)
 		table = table.where(Sequel[:書籍情報][:isbn] => params[:isbn])
 	elsif params.has_key?(:title)
@@ -203,12 +201,22 @@ get '/search' do
 		))
 	end
 
-	books = SelfDB.to_json(table)
-	books = OpenBD.get(params[:isbn]) if books.empty? && params.has_key?(:isbn)
+	table.limit 30
+end
+
+get '/search' do
+	books = SelfDB.to_json(search SelfDB::User.books(session.id), params)
+	# books = OpenBD.get(params[:isbn]) if books.empty? && params.has_key?(:isbn)
+
+	SelfDB.core_to_json(search SelfDB::BookData.dataset, params).each do |book|
+		isbn = book[:isbn]
+		books.append(book) if books.find{|v| v[:isbn] == isbn}.nil?
+	end
 
 	if RaktenBooksAPI.setup? && books.empty? && params.has_key?(:isbn) || params.has_key?(:title) || params.has_key?(:author) || params.has_key?(:tag)
 		RaktenBooksAPI.get(params).each do |book|
-			books.append(book) if books.find{|v| v[:isbn] == book[:isbn]}.nil?
+			isbn = book[:isbn]
+			books.append(book) if books.find{|v| v[:isbn] == isbn}.nil?
 		end
 	end
 
@@ -227,14 +235,22 @@ get '/search' do
 				next unless soi == 0xD8FF
 				next unless app0 == 0xE0FF
 				next unless id == 'JFIF'
-				puts "caching: #{n}"
+				logger.info "caching: #{n}"
 				File.write(n, data)
 			end
 		}.each {|th| th.join unless th.nil?}
 	end
 
 	content_type :json
-	JSON.dump(books.sort!{|a, b| b[:発売日] <=> a[:発売日]})
+	JSON.dump(books.sort!{|a, b|
+		if a[:発売日].nil?
+			1
+		elsif b[:発売日].nil?
+			-1
+		else
+			b[:発売日] <=> a[:発売日]
+		end
+	})
 rescue => e
 	content_type :json
 	JSON.dump({:error => e.message})

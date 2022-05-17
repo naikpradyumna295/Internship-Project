@@ -16,6 +16,34 @@ module OpenBD
 			book_data.map {|data| json2book(data) unless data.nil?}.delete_if{|v| v.nil?}
 		end
 
+		def coverage; JSON.parse Net::HTTP.get URI.parse 'https://api.openbd.jp/v1/coverage'; end
+
+		def gets(isbn)
+			raise 'ISBN13の配列を指定できます' unless isbn.class == Array
+
+			total = 0
+			succeed = 0
+			uri = URI.parse 'http://api.openbd.jp/v1/get'
+			http = Net::HTTP.new uri.host, uri.port
+			# http.set_debug_output $stderr
+			http.start do |conn|
+				isbn.each_slice(10000).each do |group|
+					total += group.length
+					res = conn.post(uri.path, "isbn=#{group.join ','}")
+					next unless res.code[0].to_i == 2
+					book_data = JSON.parse res.body, symbolize_names: true
+					if book_data.class == 'Hash'
+						yield [json2book(book_data)]
+					else
+						yield book_data.map {|data| json2book(data) unless data.nil?}.delete_if{|v| v.nil?}
+					end
+					succeed += group.length
+				end
+			end
+
+			{:succeed => succeed, :total => total}
+		end
+
 		private
 		
 		def json2book(data)

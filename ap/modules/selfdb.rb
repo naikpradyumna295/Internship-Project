@@ -79,9 +79,22 @@ module SelfDB
 				Date :発売日
 				String :説明, text: true
 				String :タグ, text: true
+				Date :created_at, null: false
+				Date :modified_at, null: false, default: Sequel::CURRENT_DATE
 				primary_key [:isbn]
 			end
 
+			db.create_function :new_bookdata, %{
+				BEGIN
+					IF NEW.created_at IS NULL THEN
+						NEW.created_at = CURRENT_DATE;
+					END IF;
+					RETURN NEW;
+				END;
+			}, :language => :plpgsql, :returns => :trigger, :replace => true
+			db.drop_trigger :書籍情報, :new_bookdata_trigger, :if_exists => true
+			db.create_trigger :書籍情報, :new_bookdata_trigger, :new_bookdata, :events => :insert, :each_row => true
+			
 			module_eval %{
 				class BookData < Sequel::Model :書籍情報
 					plugin :validation_helpers
@@ -92,7 +105,7 @@ module SelfDB
 						validates_presence [:isbn]
 						validates_type Decimal, [:isbn]
 						validates_type [String, NilClass], [:書籍名, :レーベル, :著者, :著者（読み）, :価格, :判型, :ページ数, :出版社, :説明, :タグ]
-						validates_type [Date, NilClass], [:発売日]
+						validates_type [Date, NilClass], [:発売日, :created_at, :modified_at]
 					end
 
 					def to_s; to_json.to_s; end
@@ -110,6 +123,8 @@ module SelfDB
 							:発売日 => 発売日,
 							:説明 => 説明,
 							:タグ => タグ,
+							:created_at => created_at,
+							:modified_at => modified_at,
 						}
 					end
 				end
@@ -167,7 +182,7 @@ module SelfDB
 
 			db
 		end
-		
+
 		def to_json(table)
 			table.use_cursor.map {|book|
 				{
@@ -192,6 +207,26 @@ module SelfDB
 					:発売日 => book[:発売日].to_s,
 					:説明 => book[:説明].to_s,
 					:タグ => book[:タグ].to_s,
+				}.delete_if{|k,v| v.nil? || v.class == String && v.empty?}
+			}
+		end
+
+		def core_to_json(table)
+			table.use_cursor.map {|book|
+				{
+					:isbn => book[:isbn].to_i,
+					:from => -1,
+					:書籍名 => book[:書籍名].to_s,
+					:レーベル => book[:レーベル].to_s,
+					:著者 => book[:著者].to_s,
+					:著者（読み） => book[:著者（読み）].to_s,
+					:価格 => book[:価格].to_i,
+					:判型 => book[:判型].to_s,
+					:ページ数 => book[:ページ数].to_i,
+					:出版社 => book[:出版社].to_s,
+					:発売日 => book[:発売日].to_s,
+					:説明 => book[:説明].to_s,
+					:cover => "https://cover.openbd.jp/#{book[:isbn].to_i}.jpg"
 				}.delete_if{|k,v| v.nil? || v.class == String && v.empty?}
 			}
 		end
@@ -324,23 +359,13 @@ module SelfDB
 	module Book
 		class << self
 			def register(sid, params)
-				basic = {}
-				basic[:isbn] = params[:isbn]
-				basic[:書籍名] = params[:書籍名] if params.has_key?(:書籍名)
-				basic[:レーベル] = params[:レーベル] if params.has_key?(:レーベル)
-				basic[:著者] = params[:著者] if params.has_key?(:著者)
-				basic[:著者（読み）] = params[:著者（読み）] if params.has_key?(:著者（読み）)
-				basic[:価格] = params[:価格] if params.has_key?(:価格)
-				basic[:判型] = params[:判型] if params.has_key?(:判型)
-				basic[:ページ数] = params[:ページ数] if params.has_key?(:ページ数)
-				basic[:出版社] = params[:出版社] if params.has_key?(:出版社)
-				basic[:発売日] = params[:発売日] if params.has_key?(:発売日)
-				BookData.dataset.insert_conflict.insert(basic)
+				isbn = params[:isbn]
+				register_core isbn, params
 	
 				session = Session.get(sid)
 				ex_data = UserBooks.new(
 					:uid => session[:uid],
-					:isbn => params[:isbn],
+					:isbn => isbn,
 					:登録日 => Date.today,
 					:購入予定 => true,
 				)
@@ -362,6 +387,25 @@ module SelfDB
 			end
 
 			def delete(sid, isbn); ex_data(sid, isbn).delete; end
+
+			def register_core(isbn, params, update: false)
+				basic = {:isbn => isbn}
+				basic[:書籍名] = params[:書籍名] if params.has_key?(:書籍名)
+				basic[:レーベル] = params[:レーベル] if params.has_key?(:レーベル)
+				basic[:著者] = params[:著者] if params.has_key?(:著者)
+				basic[:著者（読み）] = params[:著者（読み）] if params.has_key?(:著者（読み）)
+				basic[:価格] = params[:価格] if params.has_key?(:価格) && params[:価格] != 0
+				basic[:判型] = params[:判型] if params.has_key?(:判型)
+				basic[:ページ数] = params[:ページ数] if params.has_key?(:ページ数) && params[:ページ数] != 0
+				basic[:出版社] = params[:出版社] if params.has_key?(:出版社)
+				basic[:発売日] = params[:発売日] if params.has_key?(:発売日)
+
+				if update
+					BookData.dataset.insert_conflict(:constraint => :書籍情報_pkey, :update => basic, :update_where => {Sequel[:書籍情報][:isbn] => isbn}).insert basic
+				else
+					BookData.dataset.insert_conflict.insert basic
+				end
+			end
 
 			private
 	
