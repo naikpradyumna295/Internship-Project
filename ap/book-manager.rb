@@ -201,17 +201,17 @@ def search(table, params)
 		))
 	end
 
-	table.limit 30
+	table
 end
 
 get '/search' do
 	books = SelfDB.to_json(search SelfDB::User.books(session.id), params)
 	# books = OpenBD.get(params[:isbn]) if books.empty? && params.has_key?(:isbn)
 
-	SelfDB.core_to_json(search SelfDB::BookData.dataset, params).each do |book|
-		isbn = book[:isbn]
-		books.append(book) if books.find{|v| v[:isbn] == isbn}.nil?
-	end
+	# SelfDB.core_to_json(search SelfDB::BookData.dataset, params).each do |book|
+	# 	isbn = book[:isbn]
+	# 	books.append(book) if books.find{|v| v[:isbn] == isbn}.nil?
+	# end
 
 	if RaktenBooksAPI.setup? && books.empty? && params.has_key?(:isbn) || params.has_key?(:title) || params.has_key?(:author) || params.has_key?(:tag)
 		RaktenBooksAPI.get(params).each do |book|
