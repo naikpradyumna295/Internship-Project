@@ -160,7 +160,10 @@ get '/list/to-buy/unpublished' do
 					.where(Sequel.lit('既読 = 0'))
 					.where(Sequel.lit('所有 = 0'))
 					.where(:購入予定 => true)
-					.where(Sequel.lit('発売日 > CURRENT_DATE'))
+					.where(Sequel.|(
+						Sequel.lit('発売日 > CURRENT_DATE'),
+						発売日: nil,
+					))
 					.order(Sequel.asc(:発売日), :書籍名)
 rescue => e
 	content_type :json
