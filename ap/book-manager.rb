@@ -16,6 +16,8 @@ if Object.const_defined? :RAKUTEN_APP_ID
 	RaktenBooksAPI.affiliateId = RAKUTEN_AFFILIATE_ID if Object.const_defined? :RAKUTEN_AFFILIATE_ID
 end
 
+PAGE_LIMIT = 50
+
 use Rack::Session::Cookie, secret: RACK_SESSION_SECRET, max_age: 3600*24*7
 use Rack::Protection::AuthenticityToken
 use Rack::Protection::ContentSecurityPolicy
@@ -201,48 +203,65 @@ def search(table, params)
 		))
 	end
 
-	table
+	if params.has_key?(:page)
+		number = params[:page][:number].to_i - 1
+		limit = params[:page][:limit].to_i
+		if number < 0; number = 0; end
+		if limit < 1 || limit > PAGE_LIMIT; limit = PAGE_LIMIT; end
+		table = table.offset(number * limit).limit(limit)
+	end
+
+	table.order(Sequel.desc(:発売日), :書籍名, Sequel[:書籍情報][:isbn])
 end
 
-get '/search' do
-	books = SelfDB.to_json(search SelfDB::User.books(session.id), params)
-	# books = OpenBD.get(params[:isbn]) if books.empty? && params.has_key?(:isbn)
+def caching_cover(books)
+	return unless File.writable?(CACHE_DIR)
 
-	# SelfDB.core_to_json(search SelfDB::BookData.dataset, params).each do |book|
-	# 	isbn = book[:isbn]
-	# 	books.append(book) if books.find{|v| v[:isbn] == isbn}.nil?
-	# end
-
-	if RaktenBooksAPI.setup? && books.empty? && params.has_key?(:isbn) || params.has_key?(:title) || params.has_key?(:author) || params.has_key?(:tag)
-		RaktenBooksAPI.get(params).each do |book|
-			isbn = book[:isbn]
-			books.append(book) if books.find{|v| v[:isbn] == isbn}.nil?
+	books.map {|book| 
+		next unless book.has_key?(:cover)
+		uri = URI.parse(book[:cover])
+		ext = File.extname(uri.path)
+		next unless ext == '.jpg' || ext == '.jpeg'
+		cover_name = File.join(CACHE_DIR, "#{book[:isbn]}.jpg")
+		next if File.exist?(cover_name)
+		Thread.new(uri, cover_name) do |u, n|
+			data = Net::HTTP.get(u)
+			soi, app0, length, id = data[..11].unpack('S! S! S! A5')
+			next unless soi == 0xD8FF
+			next unless app0 == 0xE0FF
+			next unless id == 'JFIF'
+			logger.info "caching: #{n}"
+			File.write(n, data)
 		end
-	end
+	}.each {|th| th.join unless th.nil?}
+end
 
-	# caching book image
-	if File.writable?(CACHE_DIR)
-		books.map {|book| 
-			next unless book.has_key?(:cover)
-			uri = URI.parse(book[:cover])
-			ext = File.extname(uri.path)
-			next unless ext == '.jpg' || ext == '.jpeg'
-			cover_name = File.join(CACHE_DIR, "#{book[:isbn]}.jpg")
-			next if File.exist?(cover_name)
-			Thread.new(uri, cover_name) do |u, n|
-				data = Net::HTTP.get(u)
-				soi, app0, length, id = data[..11].unpack('S! S! S! A5')
-				next unless soi == 0xD8FF
-				next unless app0 == 0xE0FF
-				next unless id == 'JFIF'
-				logger.info "caching: #{n}"
-				File.write(n, data)
-			end
-		}.each {|th| th.join unless th.nil?}
+def join(books, additionalBooks)
+	additionalBooks.each do |book|
+		books.append(book) if books.find{|v| v[:isbn] == book[:isbn]}.nil?
 	end
+end
 
-	content_type :json
-	JSON.dump(books.sort!{|a, b|
+def to_rakuten_params(params)
+	rakuten_params = {}
+	rakuten_params[:isbn] = params[:isbn] if params.has_key?(:isbn)
+	rakuten_params[:title] = params[:title] if params.has_key?(:title)
+	rakuten_params[:author] = params[:author] if params.has_key?(:author)
+	rakuten_params[:tag] = params[:tag] if params.has_key?(:tag)
+	return nil if rakuten_params.length == 0
+	if params.has_key?(:page)
+		number = params[:page][:number].to_i + 1
+		limit = params[:page][:limit].to_i
+		if number < 1; number = 1; elsif number > 100; number = 100; end
+		if limit < 1 || limit > 30; limit = 30; end
+		rakuten_params[:page] = number
+		rakuten_params[:hits] = limit
+	end
+	rakuten_params
+end
+
+def order_by_release_date(books)
+	books.sort!{|a, b|
 		if a[:発売日].nil?
 			1
 		elsif b[:発売日].nil?
@@ -250,6 +269,86 @@ get '/search' do
 		else
 			b[:発売日] <=> a[:発売日]
 		end
+	}
+end
+
+get '/search' do
+	now_page = 1
+	if params.has_key?(:page)
+		now_page = params[:page].to_i
+		params[:page] = {:number => now_page} 
+	end
+	target = {:user => true, :coverage => true, :rakuten => true}
+	if params.has_key?(:db)
+		db = params[:db];
+		target[:user] = false if db.index("u").nil?
+		target[:coverage] = false if db.index("c").nil?
+		target[:rakuten] = false if db.index("r").nil?
+	end
+
+	logger.debug("params: #{JSON.dump(params)}")
+
+	if target[:user]
+		user = Thread.new(params) {|params|
+			find = search SelfDB::User.books(session.id), params
+			logger.debug("SQL: #{find.sql}")
+			count = find.count
+			logger.debug("user: #{count}")
+			books = SelfDB.to_json(find.limit(PAGE_LIMIT))
+			books = OpenBD.get(params[:isbn]) if books.empty? && params.has_key?(:isbn)
+			[books, count, (count / PAGE_LIMIT.to_f).ceil]
+		}
+	end
+	if target[:coverage]
+		coverage = Thread.new(params) {|params|
+			find = search SelfDB::BookData.dataset, params
+			logger.debug("SQL: #{find.sql}")
+			count = find.count
+			logger.debug("all: #{count}")
+			books = SelfDB.core_to_json(find.limit(PAGE_LIMIT))
+			[books, count, (count / PAGE_LIMIT.to_f).ceil]
+		}
+	end
+	if RaktenBooksAPI.setup? && target[:rakuten]
+		rakuten_params = to_rakuten_params params
+		unless rakuten_params.nil?
+			rakuten = Thread.new(rakuten_params) {|params|
+				meta = {}
+				books = RaktenBooksAPI.get(params, :responseMeta => meta)
+				logger.debug("rakuten: #{JSON.dump(meta)}")
+				[books, meta[:count], meta[:pageCount]]
+			}
+		end
+	end
+
+	meta = {:page => now_page, :user => nil, :coverage => nil, :rakuten => nil}
+	unless user.nil?
+		user = user.value
+		user_books = user[0]
+		meta[:user] = {:count => user[1], :pages => user[2]}
+	end
+	unless coverage.nil?
+		coverage = coverage.value
+		coverage_books = coverage[0]
+		meta[:coverage] = {:count => coverage[1], :pages => coverage[2]}
+	end
+	unless rakuten.nil?
+		rakuten = rakuten.value 
+		rakuten_books = rakuten[0]
+		meta[:rakuten] = {:count => rakuten[1], :pages => rakuten[2]}
+	end
+
+	books = []
+	join books, user_books unless user_books.nil?
+	join books, coverage_books unless coverage_books.nil?
+	join books, rakuten_books unless rakuten_books.nil?
+
+	caching_cover books
+
+	content_type :json
+	JSON.dump({
+		:books => order_by_release_date(books),
+		:meta => meta,
 	})
 rescue => e
 	content_type :json

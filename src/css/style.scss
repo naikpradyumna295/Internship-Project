@@ -140,6 +140,7 @@ select {
 
 #contents {
 	@extend %content-base;
+	overflow-x: hidden;
 }
 
 @media screen and (min-width: 640px) {
@@ -377,6 +378,11 @@ $button-bg-color--hover: hsl(30, 30%, 50%);
 			}
 		}
 	}
+}
+
+.next-page-loader {
+	display: block;
+	line-height: 5em;
 }
 
 /******************************************************************************

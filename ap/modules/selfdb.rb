@@ -184,7 +184,7 @@ module SelfDB
 		end
 
 		def to_json(table)
-			table.use_cursor.map {|book|
+			table.map {|book|
 				{
 					:isbn => book[:isbn].to_i,
 					:from => 0,
@@ -212,7 +212,7 @@ module SelfDB
 		end
 
 		def core_to_json(table)
-			table.use_cursor.map {|book|
+			table.map {|book|
 				{
 					:isbn => book[:isbn].to_i,
 					:from => -1,

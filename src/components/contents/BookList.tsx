@@ -4,6 +4,7 @@ import DetailCard from "./Card/DetailCard";
 import SimpleCard from "./Card/SimpleCard";
 import ThumbCard from "./Card/ThumbCard";
 import BookData, { BookInfo } from "./BookData";
+import NextPagePanel, { PageMeta } from "./NextPagePanel";
 import Portal from "../../Portal";
 import { SearchQuery } from "../header/Search";
 
@@ -28,27 +29,55 @@ export default function BookList(props: Props = {
 	const [books, setBooks] = React.useState<BookInfo[] | null>(null);
 	const [book, setBook] = React.useState<BookInfo | null>(null);
 	const [update, setUpdate] = React.useState(0);
+	const [pageMeta, setPageMeta] = React.useState<PageMeta | null>(null);
 	const displayType = React.useContext(DisplayTypeContext);
 
 	React.useEffect(() => {
 		let api = props.dataType;
+		let converter = (json: any) => json;
+
 		if (props.dataType == DataType.SearchList) {
 			if (!props.searchQuery) {
 				setBooks([]);
+				setPageMeta(null);
 				return;
 			}
 			api += `?${Object.entries(props.searchQuery).map(v => `${v[0]}=${encodeURIComponent(v[1])}`).join("&")}`;
-		}
-		setBooks(null);
+			converter = (json: { books: BookInfo[], meta: PageMeta }) => {
+				if (pageMeta !== null && json.meta.page > 1) {
+					if (json.meta.user !== null && pageMeta.user !== null)
+						json.meta.user.pages = pageMeta.user.pages;
+					if (json.meta.coverage !== null && pageMeta.coverage !== null)
+						json.meta.coverage.pages = pageMeta.coverage.pages;
+					if (json.meta.rakuten !== null && pageMeta.rakuten !== null)
+						json.meta.rakuten.pages = pageMeta.rakuten.pages;
+				}
+				setPageMeta(json.meta);
+				if (books === null || json.meta.page === 1)
+					return json.books;
+				const newBooks = [...books];
+				json.books.forEach((book: BookInfo) => {
+					if (!books.some(v => v.isbn === book.isbn))
+						newBooks.push(book);
+				});
+				return newBooks;
+			};
+
+			if (pageMeta === null || !("page" in props.searchQuery))
+				setBooks(null);
+		} else
+			setBooks(null)
+
 		GET(api).then(r => r.json())
 			.then(json => {
 				if (json.error)
 					throw json.error;
-				setBooks(json)
+				setBooks(converter(json));
 			})
 			.catch(e => {
 				console.error(e);
-				setBooks([])
+				setBooks([]);
+				setPageMeta(null);
 			});
 	}, [update, props.dataType, props.searchQuery]);
 
@@ -65,6 +94,7 @@ export default function BookList(props: Props = {
 				return <div className="book-list">{books.map(book => <SimpleCard key={book.isbn} book={book} setBook={setBook} />)}</div>;
 			return <div className="book-list">{books.map(book => <DetailCard key={book.isbn} book={book} setBook={setBook} />)}</div>;
 		})()}
+		<NextPagePanel pageMeta={pageMeta} />
 		<Portal targetID="modal">
 			<BookData dataType={props.dataType} book={book} setBook={setBook} handleUpdate={setUpdate} />
 		</Portal>

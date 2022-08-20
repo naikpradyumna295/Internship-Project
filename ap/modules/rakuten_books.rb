@@ -17,7 +17,7 @@ module RaktenBooksAPI
 		def setup?; @@DefaultQueryParams.has_key? :applicationId; end
 		def affiliateId=(id); @@DefaultQueryParams[:affiliateId] = id unless id.nil?; end
 
-		def get(param)
+		def get(param, responseMeta: nil)
 			raise 'Need application id.' unless setup?
 
 			params = @@DefaultQueryParams.clone.merge(param)
@@ -29,6 +29,14 @@ module RaktenBooksAPI
 			# pp book_data
 
 			raise "[#{book_data[:error]}] #{book_data[:error_description]}" unless book_data.has_key?(:Items)
+			responseMeta.merge!({
+				:count => book_data[:count],
+				:first => book_data[:first],
+				:hits => book_data[:hits],
+				:last => book_data[:last],
+				:page => book_data[:page],
+				:pageCount => book_data[:pageCount],
+			}) if responseMeta.class == Hash
 			book_data[:Items].map {|data| json2book(data)}.delete_if{|v| v.nil?}
 		rescue => e
 			puts e.message

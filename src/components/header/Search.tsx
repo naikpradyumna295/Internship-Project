@@ -5,7 +5,9 @@ export type SearchQuery = {
 	isbn: string,
 	title: string,
 	author: string,
-	tag: string
+	tag: string,
+	page: number,
+	db: string,
 }
 
 export default function Search(props: { handleSetContent: Function }) {
