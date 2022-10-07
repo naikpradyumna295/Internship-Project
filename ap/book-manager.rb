@@ -18,7 +18,7 @@ end
 
 PAGE_LIMIT = 50
 
-use Rack::Session::Cookie, secret: RACK_SESSION_SECRET, max_age: 3600*24*7
+use Rack::Session::Cookie, secret: RACK_SESSION_SECRET, max_age: 3600*24*7, same_site: 'Lax', secure: false
 use Rack::Protection::AuthenticityToken
 use Rack::Protection::ContentSecurityPolicy
 use Rack::Protection::CookieTossing
