@@ -189,20 +189,20 @@ def search(table, params)
 	if params.has_key?(:isbn)
 		table = table.where(Sequel[:書籍情報][:isbn] => params[:isbn])
 	elsif params.has_key?(:title)
-		table = table.where(Sequel.ilike(:書籍名, "%#{table.escape_like(params[:title])}%"))
+		table = table.where(Sequel.like(Sequel.function(:lower, :書籍名), Sequel.function(:lower, "%#{table.escape_like(params[:title])}%")))
 	end
 
 	if params.has_key?(:author)
 		table = table.where(Sequel.|(
-			Sequel.ilike(:著者, "%#{table.escape_like(params[:author])}%"),
-			Sequel.ilike(:著者（読み）, "%#{table.escape_like(params[:author])}%"),
+			Sequel.like(Sequel.function(:lower, :著者), Sequel.function(:lower, "%#{table.escape_like(params[:author])}%")),
+			Sequel.like(Sequel.function(:lower, :著者（読み）), Sequel.function(:lower, "%#{table.escape_like(params[:author])}%")),
 		))
 	end
 
 	if params.has_key?(:tag)
 		table = table.where(Sequel.|(
-			Sequel.ilike(Sequel[:書籍情報][:タグ], "%#{table.escape_like(params[:tag])}%"),
-			Sequel.ilike(Sequel[:ユーザー拡張情報][:タグ], "%#{table.escape_like(params[:tag])}%"),
+			Sequel.like(Sequel.function(:lower, Sequel[:書籍情報][:タグ]), Sequel.function(:lower, "%#{table.escape_like(params[:tag])}%")),
+			Sequel.like(Sequel.function(:lower, Sequel[:ユーザー拡張情報][:タグ]), Sequel.function(:lower, "%#{table.escape_like(params[:tag])}%")),
 		))
 	end
 
