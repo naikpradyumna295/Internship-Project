@@ -3,6 +3,12 @@ book-manager
 
 ISBNを元に蔵書の管理を行うWEBアプリです。
 
+## Requirements
+
+ - Apacheなど適当なhttpd(Proxy機能が必要)
+ - Ruby
+ - PostgreSQL with PGroonga
+
 ## Usage
 
 ### APサーバの準備

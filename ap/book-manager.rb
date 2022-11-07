@@ -189,13 +189,13 @@ def search(table, params)
 	if params.has_key?(:isbn)
 		table = table.where(Sequel[:書籍情報][:isbn] => params[:isbn])
 	elsif params.has_key?(:title)
-		table = table.where(Sequel.like(Sequel.function(:lower, :書籍名), Sequel.function(:lower, "%#{table.escape_like(params[:title])}%")))
+		table = table.where(Sequel.lit("書籍名 &@ ?", table.escape_like(params[:title])))
 	end
 
 	if params.has_key?(:author)
 		table = table.where(Sequel.|(
-			Sequel.like(Sequel.function(:lower, :著者), Sequel.function(:lower, "%#{table.escape_like(params[:author])}%")),
-			Sequel.like(Sequel.function(:lower, :著者（読み）), Sequel.function(:lower, "%#{table.escape_like(params[:author])}%")),
+			Sequel.lit("著者 &@ ?", table.escape_like(params[:author])),
+			Sequel.lit("著者（読み） &@ ?", table.escape_like(params[:author])),
 		))
 	end
 
