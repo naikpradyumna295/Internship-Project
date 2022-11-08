@@ -7,7 +7,7 @@ require_relative '../../modules/openbd'
 require_relative '../../modules/rakuten_books'
 require_relative '../../secret'
 
-SelfDB.setup DB_NAME
+SelfDB.setup DB_NAME, user: DB_USER, password: DB_PWD
 RaktenBooksAPI.setup RAKUTEN_APP_ID
 
 coverage = SelfDB::BookData.select(:isbn).use_cursor.map {|book| book[:isbn].to_i}.join(",")

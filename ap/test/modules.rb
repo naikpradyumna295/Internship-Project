@@ -5,7 +5,7 @@ require_relative '../modules/openbd'
 require_relative '../modules/rakuten_books'
 require_relative '../secret'
 
-$DB = SelfDB.setup(DB_NAME)
+$DB = SelfDB.setup(DB_NAME, user: DB_USER, password: DB_PWD)
 RaktenBooksAPI.setup(RAKUTEN_APP_ID)
 
 def test(notes)

@@ -10,8 +10,12 @@ module SelfDB
 	end
 
 	class << self
-		def setup(db_name, user: 'pgsql', password: 'pgsql', host: 'localhost')
-			db = Sequel.postgres(db_name, :user => user, :password => password, :host => host)
+		def setup(db_name, user: nil, password: nil, host: 'localhost')
+			options = {}
+			options[:user] = user unless user.nil?
+			options[:password] = password unless password.nil?
+			options[:host] = host unless host.nil?
+			db = Sequel.postgres(db_name, **options)
 
 			db.create_table? :ユーザー情報 do
 				primary_key :uid

@@ -8,7 +8,7 @@ require_relative '../modules/openbd'
 require_relative '../modules/selfdb'
 require_relative '../secret'
 
-SelfDB.setup DB_NAME
+SelfDB.setup DB_NAME, user: DB_USER, password: DB_PWD
 
 coverage = OpenBD.coverage
 puts "All coverage books: #{coverage.length}"
