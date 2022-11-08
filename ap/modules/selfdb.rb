@@ -91,6 +91,7 @@ module SelfDB
 			db.run 'CREATE EXTENSION IF NOT EXISTS pgroonga';
 			db.run 'CREATE INDEX IF NOT EXISTS pgroonga_書籍名_index ON 書籍情報 USING pgroonga (書籍名)';
 			db.run 'CREATE INDEX IF NOT EXISTS pgroonga_著者_index ON 書籍情報 USING pgroonga (著者)';
+			db.run 'CREATE INDEX IF NOT EXISTS pgroonga_著者（読み）_index ON 書籍情報 USING pgroonga (著者（読み）)';
 			
 			db.create_function :new_bookdata, %{
 				BEGIN
@@ -192,36 +193,8 @@ module SelfDB
 		end
 
 		def to_json(table)
-			table.map {|book|
-				{
-					:isbn => book[:isbn].to_i,
-					:from => 0,
-					:登録日 => book[:登録日].to_s,
-					:読了日 => book[:読了日].to_s,
-					:既読 => book[:既読].to_i,
-					:所有 => book[:所有].to_i,
-					:購入予定 => book[:購入予定],
-					:評価 => book[:評価].to_i,
-					:貸出先 => book[:貸出先].to_s,
-					:コメント => book[:コメント].to_s,
-					:書籍名 => book[:書籍名].to_s,
-					:レーベル => book[:レーベル].to_s,
-					:著者 => book[:著者].to_s,
-					:著者（読み） => book[:著者（読み）].to_s,
-					:価格 => book[:価格].to_i,
-					:判型 => book[:判型].to_s,
-					:ページ数 => book[:ページ数].to_i,
-					:出版社 => book[:出版社].to_s,
-					:発売日 => book[:発売日].to_s,
-					:説明 => book[:説明].to_s,
-					:タグ => book[:タグ].to_s,
-				}.delete_if{|k,v| v.nil? || v.class == String && v.empty?}
-			}
-		end
-
-		def core_to_json(table)
-			table.map {|book|
-				{
+			table.map do |book|
+				core = {
 					:isbn => book[:isbn].to_i,
 					:from => -1,
 					:書籍名 => book[:書籍名].to_s,
@@ -234,9 +207,25 @@ module SelfDB
 					:出版社 => book[:出版社].to_s,
 					:発売日 => book[:発売日].to_s,
 					:説明 => book[:説明].to_s,
-					:cover => "https://cover.openbd.jp/#{book[:isbn].to_i}.jpg"
-				}.delete_if{|k,v| v.nil? || v.class == String && v.empty?}
-			}
+				}
+				if book[:uid].nil?
+					core[:cover] = "https://cover.openbd.jp/#{book[:isbn].to_i}.jpg"
+				else
+					core = core.merge({
+						:from => 0,
+						:登録日 => book[:登録日].to_s,
+						:読了日 => book[:読了日].to_s,
+						:既読 => book[:既読].to_i,
+						:所有 => book[:所有].to_i,
+						:購入予定 => book[:購入予定],
+						:評価 => book[:評価].to_i,
+						:貸出先 => book[:貸出先].to_s,
+						:コメント => book[:コメント].to_s,
+						:タグ => book[:タグ].to_s,
+					})
+				end
+				core.delete_if{|k,v| v.nil? || v.class == String && v.empty?}
+			end
 		end
 
 		def pw2digest(pw, salt); Digest::MD5.hexdigest("#{pw.to_s}@#{salt.to_s}"); end
@@ -360,6 +349,11 @@ module SelfDB
 				base_table = BookData.join(UserBooks.where(:uid => session[:uid]), isbn: :isbn)
 				raise '情報が見つかりません' if base_table.nil?
 				base_table
+			end
+
+			def extra_data(sid)
+				session = Session.get(sid)
+				UserBooks.where(:uid => session[:uid])
 			end
 		end
 	end

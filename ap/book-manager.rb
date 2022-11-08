@@ -6,7 +6,6 @@ require 'sinatra/reloader'
 require 'logger'
 require 'sequel'
 require_relative 'modules/selfdb'
-require_relative 'modules/openbd'
 require_relative 'modules/rakuten_books'
 require_relative 'secret'
 
@@ -214,7 +213,7 @@ def search(table, params)
 		table = table.offset(number * limit).limit(limit)
 	end
 
-	table.order(Sequel.desc(:発売日), :書籍名, Sequel[:書籍情報][:isbn])
+	table
 end
 
 def caching_cover(books)
@@ -281,34 +280,32 @@ get '/search' do
 		now_page = params[:page].to_i
 		params[:page] = {:number => now_page} 
 	end
-	target = {:user => true, :coverage => true, :rakuten => true}
+
+	only_owned = params.has_key?(:only_owned) && params[:only_owned]
+	with_rakuten = params.has_key?(:with_rakuten) && params[:with_rakuten]
+	target = {:coverage => true, :rakuten => with_rakuten}
 	if params.has_key?(:db)
 		db = params[:db];
-		target[:user] = false if db.index("u").nil?
-		target[:coverage] = false if db.index("c").nil?
-		target[:rakuten] = false if db.index("r").nil?
+		target[:coverage] = !db.index("c").nil?
+		target[:rakuten] = !db.index("r").nil?
 	end
 
 	logger.debug("params: #{JSON.dump(params)}")
 
-	if target[:user]
-		user = Thread.new(params) {|params|
-			find = search SelfDB::User.books(session.id), params
-			logger.debug("SQL: #{find.sql}")
-			count = find.count
-			logger.debug("user: #{count}")
-			books = SelfDB.to_json(find.limit(PAGE_LIMIT))
-			books = OpenBD.get(params[:isbn]) if books.empty? && params.has_key?(:isbn)
-			[books, count, (count / PAGE_LIMIT.to_f).ceil]
-		}
-	end
 	if target[:coverage]
 		coverage = Thread.new(params) {|params|
-			find = search SelfDB::BookData.dataset, params
+			if only_owned
+				find = search SelfDB::User.books(session.id), params
+			else
+				find = search SelfDB::BookData.dataset, params
+				find = find.left_outer_join(SelfDB::User.extra_data(session.id), [:isbn])
+			end
+			find = find.order(Sequel.desc(:発売日), :書籍名, Sequel[:書籍情報][:isbn])
+
 			logger.debug("SQL: #{find.sql}")
 			count = find.count
-			logger.debug("all: #{count}")
-			books = SelfDB.core_to_json(find.limit(PAGE_LIMIT))
+			logger.debug("coverage: #{count}")
+			books = SelfDB.to_json(find.limit(PAGE_LIMIT))
 			[books, count, (count / PAGE_LIMIT.to_f).ceil]
 		}
 	end
@@ -324,12 +321,7 @@ get '/search' do
 		end
 	end
 
-	meta = {:page => now_page, :user => nil, :coverage => nil, :rakuten => nil}
-	unless user.nil?
-		user = user.value
-		user_books = user[0]
-		meta[:user] = {:count => user[1], :pages => user[2]}
-	end
+	meta = {:page => now_page, :coverage => nil, :rakuten => nil}
 	unless coverage.nil?
 		coverage = coverage.value
 		coverage_books = coverage[0]
@@ -342,7 +334,6 @@ get '/search' do
 	end
 
 	books = []
-	join books, user_books unless user_books.nil?
 	join books, coverage_books unless coverage_books.nil?
 	join books, rakuten_books unless rakuten_books.nil?
 

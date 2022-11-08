@@ -45,9 +45,7 @@ export default function BookList(props: Props = {
 			api += `?${Object.entries(props.searchQuery).map(v => `${v[0]}=${encodeURIComponent(v[1])}`).join("&")}`;
 			converter = (json: { books: BookInfo[], meta: PageMeta }) => {
 				if (pageMeta !== null && json.meta.page > 1) {
-					if (json.meta.user !== null && pageMeta.user !== null)
-						json.meta.user.pages = pageMeta.user.pages;
-					if (json.meta.coverage !== null && pageMeta.coverage !== null)
+					if (json.meta.coverage !== null)
 						json.meta.coverage.pages = pageMeta.coverage.pages;
 					if (json.meta.rakuten !== null && pageMeta.rakuten !== null)
 						json.meta.rakuten.pages = pageMeta.rakuten.pages;

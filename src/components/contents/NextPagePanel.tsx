@@ -8,8 +8,7 @@ type DBMeta = {
 
 export type PageMeta = {
 	page: number;
-	user: DBMeta | null;
-	coverage: DBMeta | null;
+	coverage: DBMeta;
 	rakuten: DBMeta | null;
 };
 
@@ -44,8 +43,7 @@ export default function NextPagePanel(props: Props) {
 	}, [page]);
 
 	let db = "";
-	if (meta.user !== null && page < meta.user.pages) db += "u";
-	if (meta.coverage !== null && page < meta.coverage.pages) db += "c";
+	if (page < meta.coverage.pages) db += "c";
 	if (meta.rakuten !== null && page < meta.rakuten.pages) db += "r";
 
 	if (!db.length)
