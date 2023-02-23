@@ -149,7 +149,7 @@ module OpenBD
 			}
 			contributor.map {|c|
 				if type == :content
-					r = c[:ContributorRole].map {|role| table[role] }
+					r = c[:ContributorRole].map {|role| table[role.to_sym] }
 					"#{c[:PersonName][type]}／#{r.join("・")}"
 				else
 					c[:PersonName][type]

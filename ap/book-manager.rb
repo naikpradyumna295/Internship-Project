@@ -229,9 +229,9 @@ def caching_cover(books)
 		Thread.new(uri, cover_name) do |u, n|
 			data = Net::HTTP.get(u)
 			soi, app0, length, id = data[..11].unpack('S! S! S! A5')
-			next unless soi == 0xD8FF
-			next unless app0 == 0xE0FF
-			next unless id == 'JFIF'
+			next unless soi == 0xD8FF && app0 == 0xE0FF && id == 'JFIF'
+			next if data.size == 3185 && Digest::SHA256.hexdigest(data) == '56ef1a38d5ba7980f1a6c08926c931d0feaa12fd837e62d861373921670c3592'
+
 			logger.info "caching: #{n}"
 			File.write(n, data)
 		end

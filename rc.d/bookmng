@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# PROVIDE: bookmng
+# REQUIRE: DAEMON
+# BEFORE: LOGIN
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="bookmng"
+rcvar="${name}_enable"
+
+start_cmd="${name}_start"
+stop_cmd="${name}_stop"
+
+bundle="/usr/local/bin/bundle"
+
+bookmng_chdir="/var/www/book-manager/ap"
+bookmng_user="${name}"
+
+bookmng_start()
+{
+	su - $bookmng_user -c "cd ${bookmng_chdir}; ${bundle} exec pumactl start"
+}
+
+bookmng_stop()
+{
+	su - $bookmng_user -c "cd ${bookmng_chdir}; ${bundle} exec pumactl stop"
+}
+
+load_rc_config $name
+run_rc_command "$1"

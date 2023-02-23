@@ -20,10 +20,7 @@
 }
 
 $book-card-bg-color: hsl(30, 100%, 90%);
-$book-card-bg-color--hover: hsl(30, 100%, 80%);
-$book-card-bg-color-unregistered: hsl(30, 50%, 80%);
 $dialog-value-color: hsl(30, 60%, 80%);
-$dialog-value-color-unregistered: hsl(30, 40%, 70%);
 
 @mixin dialog-box() {
 	display: flex;
@@ -370,13 +367,7 @@ $button-bg-color--hover: hsl(30, 30%, 50%);
 	}
 
 	.unregistered {
-		background-color: $book-card-bg-color-unregistered;
-
-		>table {
-			.value {
-				background-color: $dialog-value-color-unregistered;
-			}
-		}
+		filter: brightness(.75) grayscale(.25);
 	}
 }
 
@@ -403,7 +394,11 @@ $button-bg-color--hover: hsl(30, 30%, 50%);
 	cursor: pointer;
 
 	&:hover {
-		background-color: $book-card-bg-color--hover;
+		filter: brightness(1.1);
+
+		>.book-image>img {
+			filter: brightness(1.25);
+		}
 	}
 
 	&--detail {

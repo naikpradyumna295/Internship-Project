@@ -104,6 +104,30 @@ module SelfDB
 			db.drop_trigger :書籍情報, :new_bookdata_trigger, :if_exists => true
 			db.create_trigger :書籍情報, :new_bookdata_trigger, :new_bookdata, :events => :insert, :each_row => true
 			
+			db.create_function :update_bookdata, %{
+				BEGIN
+					IF OLD.書籍名 = NEW.書籍名
+					AND OLD.レーベル = NEW.レーベル
+					AND OLD.著者 = NEW.著者
+					AND OLD.著者（読み） = NEW.著者（読み）
+					AND OLD.価格 = NEW.価格
+					AND OLD.判型 = NEW.判型
+					AND OLD.ページ数 = NEW.ページ数
+					AND OLD.出版社 = NEW.出版社
+					AND OLD.発売日 = NEW.発売日
+					AND OLD.説明 = NEW.説明
+					AND OLD.タグ = NEW.タグ
+					THEN
+						RETURN NULL;
+					END IF;
+
+					NEW.modified_at = CURRENT_DATE;
+					RETURN NEW;
+				END;
+			}, :language => :plpgsql, :returns => :trigger, :replace => true
+			db.drop_trigger :書籍情報, :update_bookdata_trigger, :if_exists => true
+			db.create_trigger :書籍情報, :update_bookdata_trigger, :update_bookdata, :events => :update, :each_row => true
+			
 			module_eval %{
 				class BookData < Sequel::Model :書籍情報
 					plugin :validation_helpers

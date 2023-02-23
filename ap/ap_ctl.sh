@@ -18,7 +18,7 @@ stop()
 
 update()
 {
-	bundle exec ruby ./misc/caching_openbd.rb -nocover
+	bundle exec ruby ./misc/cache_util.rb --update
 }
 
 case "$1" in
