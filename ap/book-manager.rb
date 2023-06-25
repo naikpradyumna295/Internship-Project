@@ -9,7 +9,7 @@ require_relative 'modules/selfdb'
 require_relative 'modules/rakuten_books'
 require_relative 'secret'
 
-SelfDB.setup DB_NAME, user: DB_USER, password: DB_PWD
+SelfDB.setup DB_NAME, host: DB_HOST, user: DB_USER, password: DB_PWD
 if Object.const_defined? :RAKUTEN_APP_ID
 	RaktenBooksAPI.setup RAKUTEN_APP_ID
 	RaktenBooksAPI.affiliateId = RAKUTEN_AFFILIATE_ID if Object.const_defined? :RAKUTEN_AFFILIATE_ID

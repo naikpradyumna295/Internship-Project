@@ -6,7 +6,7 @@ require_relative '../../secret'
 
 module CacheUtil
 	def self.completion_of_cover_image(cache_dir)
-		SelfDB.setup DB_NAME, user: DB_USER, password: DB_PWD
+		SelfDB.setup DB_NAME, host: DB_HOST, user: DB_USER, password: DB_PWD
 		RaktenBooksAPI.setup RAKUTEN_APP_ID
 		
 		coverage = SelfDB::UserBooks.order(:isbn).distinct(:isbn).select(:isbn).all.map{|book| book[:isbn].to_i}

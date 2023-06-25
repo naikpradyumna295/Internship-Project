@@ -19,6 +19,7 @@ ISBNを元に蔵書の管理を行うWEBアプリです。
 |----|--|----|:-:|
 |CACHE_DIR|string|書影画像([ISBN].jpg)を保存するディレクトリへの絶対パス|必須|
 |RACK_SESSION_SECRET|string|Rackのession secret|必須|
+|DB_HOST|string|database address|必須(不要な場合はnilを指定)|
 |DB_NAME|string|database名|必須|
 |DB_USER|string|DB用ユーザー名|必須|
 |DB_PWD|string|DB用パスワード|必須(不要な場合はnilを指定)|

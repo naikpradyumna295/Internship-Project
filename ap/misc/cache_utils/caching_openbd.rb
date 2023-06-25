@@ -11,7 +11,7 @@ require_relative '../../secret'
 
 module CacheUtil
 	def self.caching_openbd(cache_dir, option)
-		SelfDB.setup DB_NAME, user: DB_USER, password: DB_PWD
+		SelfDB.setup DB_NAME, host: DB_HOST, user: DB_USER, password: DB_PWD
 
 		coverage = OpenBD.coverage
 		puts "All coverage books: #{coverage.length}"
