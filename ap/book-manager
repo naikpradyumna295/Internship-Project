@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: myapp_production
+      POSTGRES_USER: myapp_user
+      POSTGRES_PASSWORD: myapp_password
+
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgres://myapp_user:myapp_password@db:5432/myapp_production"
+
